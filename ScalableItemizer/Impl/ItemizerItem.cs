@@ -9,24 +9,49 @@ namespace ScalableItemizer.Impl
     internal class ItemizerItem : ItemizerBase, IItemizerItem
     {
         private ManualResetEventSlim resetEvent;
-        private Action action;
+        private Action<IItemizerItem> action;
+        private Func<double> itemsPerIterationFunc;
+        private double itemsPerIteration;
 
-        public double ItemsPerIteration { get; private set; }
+        public double ItemsPerIteration
+        {
+            get
+            {
+                return itemsPerIterationFunc != null ? itemsPerIterationFunc() : itemsPerIteration;
+            }
+        }
 
         public string Identifier { get; private set; }
 
         public ItemizerOptions Options { get; private set; }
 
-        public ItemizerItem(double itemsPerIteration, Action action)
+        private ItemizerItem()
         {
-            ItemsPerIteration = itemsPerIteration;
-            Identifier = Guid.NewGuid().ToString("D");
-
-            this.action = action;
             this.resetEvent = new ManualResetEventSlim(false);
+            Identifier = Guid.NewGuid().ToString("D");
         }
 
-        public ItemizerItem(double itemsPerIteration, ItemizerOptions options, Action action)
+        public ItemizerItem(Func<double> itemsPerIterationFunc, Action<IItemizerItem> action)
+            : this()
+        {
+            this.action = action;
+            this.itemsPerIterationFunc = itemsPerIterationFunc;
+        }
+
+        public ItemizerItem(Func<double> itemsPerIterationFunc, ItemizerOptions options, Action<IItemizerItem> action)
+            : this(itemsPerIterationFunc, action)
+        {
+            Options = options;
+        }
+
+        public ItemizerItem(double itemsPerIteration, Action<IItemizerItem> action)
+            : this()
+        {
+            this.itemsPerIteration = itemsPerIteration;
+            this.action = action;
+        }
+
+        public ItemizerItem(double itemsPerIteration, ItemizerOptions options, Action<IItemizerItem> action)
             : this(itemsPerIteration, action)
         {
             Options = options;
@@ -48,13 +73,13 @@ namespace ScalableItemizer.Impl
                 }
                 else
                 {
-                    if ((itemsToAdd < 1.0 && items < 1.0) || (itemsToAdd < ItemsPerIteration))
+                    if ((!(itemsToAdd < 1.0) || !(items < 1.0)) && (!(itemsToAdd < ItemsPerIteration)))
                     {
-                        items += itemsToAdd;
+                        items = itemsToAdd;
                     }
                     else
                     {
-                        items = itemsToAdd;
+                        items += itemsToAdd;
                     }
                 }
             }
@@ -92,11 +117,11 @@ namespace ScalableItemizer.Impl
 
                         if (Options.HasFlag(ItemizerOptions.SeparateThread))
                         {
-                            Task.Factory.StartNew(action);
+                            Task.Factory.StartNew(() => action(this));
                         }
                         else
                         {
-                            action();
+                            action(this);
                         }
 
                         lock (lockObject)

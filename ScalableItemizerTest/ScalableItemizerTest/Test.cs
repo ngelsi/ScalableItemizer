@@ -16,7 +16,7 @@ namespace ScalableItemizerTest
 
             int item1 = 0;
 
-            itemizer.Add(1, ItemizerOptions.InheritItems, () =>
+            itemizer.Add(1, ItemizerOptions.InheritItems, (i) =>
             {
                 Interlocked.Increment(ref item1);
 
@@ -46,7 +46,7 @@ namespace ScalableItemizerTest
             int item2 = 0;
             int item3 = 0;
 
-            itemizer.Add(0.5, ItemizerOptions.InheritItems, () =>
+            itemizer.Add(0.5, ItemizerOptions.InheritItems, (i) =>
             {
                 Interlocked.Increment(ref item1);
 
@@ -56,12 +56,12 @@ namespace ScalableItemizerTest
                 }
             });
 
-            itemizer.Add(1, ItemizerOptions.InheritItems, () =>
+            itemizer.Add(1, ItemizerOptions.InheritItems, (i) =>
             {
                 Interlocked.Increment(ref item2);
             });
 
-            itemizer.Add(2, ItemizerOptions.InheritItems, () =>
+            itemizer.Add(2, ItemizerOptions.InheritItems, (i) =>
             {
                 Interlocked.Increment(ref item3);
             });
@@ -86,7 +86,7 @@ namespace ScalableItemizerTest
 
             int item1 = 0;
 
-            itemizer.Add(1, () =>
+            itemizer.Add(1, (i) =>
             {
                 Interlocked.Increment(ref item1);
             });
@@ -110,15 +110,15 @@ namespace ScalableItemizerTest
             int item2 = 0;
             int item3 = 0;
 
-            itemizer.Add(0.5, () =>
+            itemizer.Add(0.5, (i) =>
             {
                 Interlocked.Increment(ref item1);
             });
-            itemizer.Add(1, () =>
+            itemizer.Add(1, (i) =>
             {
                 Interlocked.Increment(ref item2);
             });
-            itemizer.Add(2, () =>
+            itemizer.Add(2, (i) =>
             {
                 Interlocked.Increment(ref item3);
             });

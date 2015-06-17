@@ -36,16 +36,6 @@ namespace ScalableItemizer.Impl.Itemizers
             base.Stop();
         }
 
-        protected override IItemizerItem Add(ItemizerItem item)
-        {
-            if (ItemsPerInterval < item.ItemsPerIteration)
-            {
-                throw new ArgumentException("The items/iteration value can not be bigger than the items/interval value");
-            }
-
-            return base.Add(item);
-        }
-
         private void InternalTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
             lock (lockObject)

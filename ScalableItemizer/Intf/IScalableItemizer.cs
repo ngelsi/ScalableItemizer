@@ -5,9 +5,15 @@ namespace ScalableItemizer.Intf
 {
     public interface IScalableItemizer : IItemizerBase
     {
-        IItemizerItem Add(double itemsPerIteration, Action action);
+        event EventHandler<UnhandledExceptionEventArgs> Exception;
 
-        IItemizerItem Add(double itemsPerIteration, ItemizerOptions options, Action action);
+        IItemizerItem Add(double itemsPerIteration, Action<IItemizerItem> action);
+
+        IItemizerItem Add(double itemsPerIteration, ItemizerOptions options, Action<IItemizerItem> action);
+
+        IItemizerItem Add(Func<double> itemsPerIteration, Action<IItemizerItem> action);
+
+        IItemizerItem Add(Func<double> itemsPerIteration, ItemizerOptions options, Action<IItemizerItem> action);
 
         void Remove(string identifier);
 

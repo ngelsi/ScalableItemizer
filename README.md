@@ -13,13 +13,13 @@ Here is a simple example of an automated itemizer with 2 bound actions:
 var itemizer = Itemizer.Automated(1000, 2);
 
 //Bind an action which should be executed once per interval
-itemizer.Add(1, () =>
+itemizer.Add(1, (i) =>
 {
     Console.WriteLine("Action 1 executing");
 });
 
 //Bind another action which should be executed once per interval
-itemizer.Add(1, () =>
+itemizer.Add(1, (i) =>
 {
     Console.WriteLine("Action 2 executing");
 });
@@ -31,7 +31,7 @@ In this case, the two actions will be executed once every second.
 However, if we change the second action binding to the following:
 
 ```C#
-itemizer.Add(0.5, () =>
+itemizer.Add(0.5, (i) =>
 {
     Console.WriteLine("Action 2 executing");
 });
@@ -51,19 +51,19 @@ private static void Main(string[] args)
     int action2 = 0;
     int action3 = 0;
 
-    itemizer.Add(0.5, () =>
+    itemizer.Add(0.5, (i) =>
     {
         Interlocked.Increment(ref action1);
         Console.WriteLine("Action 1 executing");
     });
 
-    itemizer.Add(1, () =>
+    itemizer.Add(1, (i) =>
     {
         Interlocked.Increment(ref action2);
         Console.WriteLine("Action 2 executing");
     });
 
-    itemizer.Add(2, () =>
+    itemizer.Add(2, (i) =>
     {
         Interlocked.Increment(ref action3);
         Console.WriteLine("Action 3 executing");
@@ -108,31 +108,31 @@ private static void Main(string[] args)
     int test4 = 0;
     int test5 = 0;
 
-    itemizer.Add(0.5, ItemizerOptions.InheritItems, () =>
+    itemizer.Add(0.5, ItemizerOptions.InheritItems, (i) =>
     {
         Interlocked.Increment(ref test1);
         Console.WriteLine("test 1");
     });
 
-    itemizer.Add(1, ItemizerOptions.InheritItems, () =>
+    itemizer.Add(1, ItemizerOptions.InheritItems, (i) =>
     {
         Interlocked.Increment(ref test2);
         Console.WriteLine("test 2");
     });
 
-    itemizer.Add(2, ItemizerOptions.InheritItems, () =>
+    itemizer.Add(2, ItemizerOptions.InheritItems, (i) =>
     {
         Interlocked.Increment(ref test3);
         Console.WriteLine("test 3");
     });
 
-    itemizer.Add(2, ItemizerOptions.InheritItems, () =>
+    itemizer.Add(2, ItemizerOptions.InheritItems, (i) =>
     {
         Interlocked.Increment(ref test4);
         Console.WriteLine("test 4");
     });
     
-    itemizer.Add(0.5, ItemizerOptions.InheritItems, () =>
+    itemizer.Add(0.5, ItemizerOptions.InheritItems, (i) =>
     {
         Interlocked.Increment(ref test5);
         Console.WriteLine("test 5");
@@ -181,5 +181,55 @@ Another itemizer option available is the
     
 which tells the itemizer to execute the actions in a separate thread. Notice that this could cause performance problems if there are multiple actions executing in a really fast pace.
     
+#Dynamic itemizer iterations
+
+It is also possible to bind actions to the itemizers using dynamic iteration numbers. The specified function -- which have to return a double value -- will be executed when the itemizer is determining the iteration number for the given action.
+The following example demonstrates a binding using dynamic iteration:
+
+```c#
+var itemizer = Itemizer.Automated(1000, 10);
+int i = 0;
+
+itemizer.Add(() => Math.Max(i, 10), (it) =>
+{
+    Interlocked.Increment(ref i);
+    Console.WriteLine(i);
+});
+
+itemizer.Start();
+```   
     
+#Removing actions from the itemizer
+
+If you would like to shut down the itemizer and all bound actions, simply call
     
+    itemizer.Dispose();
+    
+which stops and destroys all bound actions, and finally stops and destroys the itemizer itself.
+If you only want to remove one action from the itemizer, you can use the **IItemizerItem** interface passed to the action to do the following:
+
+```c#
+itemizer.Add(() => Math.Max(i, 10), (it) =>
+{
+    Interlocked.Increment(ref i);
+    Console.WriteLine(i);
+
+    itemizer.Remove(it);
+});
+```
+
+Or you can remove an action out of the action context by using the **IItemizerItem** interface returned when the **Add** function is called on the itemizer:
+
+```c#
+var action = itemizer.Add(() => Math.Max(i, 10), (it) =>
+{
+    Interlocked.Increment(ref i);
+    Console.WriteLine(i);
+});
+
+...
+
+itemizer.Remove(action);
+```
+
+Calling the **Remove()** method on the itemizer also disposes of the action and the resources bound to the action, so calling Dispose() on the action is unnecessary.

@@ -20,12 +20,24 @@ namespace ScalableItemizer.Impl
             ResetEvent = new ManualResetEventSlim(false);
         }
 
-        public IItemizerItem Add(double itemsPerIteration, Action action)
+        public event EventHandler<UnhandledExceptionEventArgs> Exception;
+
+        public IItemizerItem Add(double itemsPerIteration, Action<IItemizerItem> action)
         {
             return Add(new ItemizerItem(itemsPerIteration, action));
         }
 
-        public IItemizerItem Add(double itemsPerIteration, ItemizerOptions options, Action action)
+        public IItemizerItem Add(double itemsPerIteration, ItemizerOptions options, Action<IItemizerItem> action)
+        {
+            return Add(new ItemizerItem(itemsPerIteration, options, action));
+        }
+
+        public IItemizerItem Add(Func<double> itemsPerIteration, Action<IItemizerItem> action)
+        {
+            return Add(new ItemizerItem(itemsPerIteration, action));
+        }
+
+        public IItemizerItem Add(Func<double> itemsPerIteration, ItemizerOptions options, Action<IItemizerItem> action)
         {
             return Add(new ItemizerItem(itemsPerIteration, options, action));
         }
@@ -68,38 +80,50 @@ namespace ScalableItemizer.Impl
 
                     do
                     {
-                        if (itemizers.Count <= currentItemPosition)
-                        {
-                            Interlocked.Exchange(ref currentItemPosition, 0);
-                        }
-
                         lock (lockObject)
                         {
-                            var itemizer = itemizers.ElementAtOrDefault(currentItemPosition);
-                            if (itemizer == null)
+                            try
                             {
-                                continue;
-                            }
-
-                            var itemizerSideItems = itemizer.ItemsPerIteration;
-                            if (!(0 <= items - itemizerSideItems))
-                            {
-                                continueRunning = Running && 0 < (int)items;
-                                if (continueRunning)
+                                if (itemizers.Count <= currentItemPosition)
                                 {
-                                    Interlocked.Increment(ref currentItemPosition);
+                                    Interlocked.Exchange(ref currentItemPosition, 0);
                                 }
 
-                                continue;
+                                var itemizer = itemizers.ElementAtOrDefault(currentItemPosition);
+                                if (itemizer == null)
+                                {
+                                    continue;
+                                }
+
+                                var itemizerSideItems = itemizer.ItemsPerIteration;
+                                if (items < itemizerSideItems)
+                                {
+                                    itemizerSideItems = items;
+                                }
+                                
+                                if (!(0 <= items - itemizerSideItems) || Math.Abs(itemizerSideItems) <= 0)
+                                {
+                                    continueRunning = Running && 0 < (int)items;
+                                    if (continueRunning)
+                                    {
+                                        Interlocked.Increment(ref currentItemPosition);
+                                    }
+
+                                    continue;
+                                }
+
+                                items -= itemizerSideItems;
+
+                                itemizer.AddItems(itemizerSideItems);
+                                itemizer.Start();
+
+                                Interlocked.Increment(ref currentItemPosition);
+                                continueRunning = Running && 0 < items;
                             }
-
-                            items -= itemizer.ItemsPerIteration;
-
-                            itemizer.AddItems(itemizer.ItemsPerIteration);
-                            itemizer.Start();
-
-                            Interlocked.Increment(ref currentItemPosition);
-                            continueRunning = Running && 0 < items;
+                            catch (Exception ex)
+                            {
+                                OnException(new UnhandledExceptionEventArgs(ex, false));
+                            }
                         }
                     }
                     while (continueRunning);
@@ -129,6 +153,12 @@ namespace ScalableItemizer.Impl
             }
 
             itemizers.Clear();
+        }
+
+        protected virtual void OnException(UnhandledExceptionEventArgs e)
+        {
+            var handler = Exception;
+            if (handler != null) handler(this, e);
         }
     }
 }

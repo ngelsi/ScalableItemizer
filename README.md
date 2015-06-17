@@ -143,7 +143,8 @@ private static void Main(string[] args)
     itemizer.Supply(100);
     Console.ReadLine();
     itemizer.Dispose();
-    Console.WriteLine("test1: {0}, test2: {1}, test3: {2}, test4: {3}, test5: {4}", test1, test2, test3, test4, test5);
+    Console.WriteLine("test1: {0}, test2: {1}, test3: {2}, test4: {3}, test5: {4}",
+        test1, test2, test3, test4, test5);
     Console.ReadLine();
 }
 ```
@@ -233,3 +234,15 @@ itemizer.Remove(action);
 ```
 
 Calling the **Remove()** method on the itemizer also disposes of the action and the resources bound to the action, so calling Dispose() on the action is unnecessary.
+
+#Events
+
+The itemizer and the action itself supports the following events:
+
+* Started: The worker thread of the itemizer/action has been started.
+* Stopped: The worker thread of the itemizer/action has been halted until it is started again
+* Executing: An interval has been started inside the itemizer, or an action execution has been started inside an action.
+
+The itemizer separately supports the following event:
+
+* Exception: An exception has occured inside the worker thread, but it is caught to prevent the termination of the worker. The exception is passed with the event arguments.

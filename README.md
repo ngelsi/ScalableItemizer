@@ -240,7 +240,7 @@ Calling the **Remove()** method on the itemizer also disposes of the action and 
 The itemizer and the action itself supports the following events:
 
 * Started: The worker thread of the itemizer/action has been started.
-* Stopped: The worker thread of the itemizer/action has been halted until it is started again
+* Stopped: The worker thread of the itemizer/action has been halted until it is started again.
 * Executing: An interval has been started inside the itemizer, or an action execution has been started inside an action.
 
 The itemizer separately supports the following event:

@@ -1,4 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using System.Security.Policy;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ScalableItemizer;
 using ScalableItemizer.Mod;
 using System.Threading;
@@ -49,11 +51,6 @@ namespace ScalableItemizerTest
             itemizer.Add(0.5, ItemizerOptions.InheritItems, (i) =>
             {
                 Interlocked.Increment(ref item1);
-
-                if (item1 == 14)
-                {
-                    handle.Set();
-                }
             });
 
             itemizer.Add(1, ItemizerOptions.InheritItems, (i) =>
@@ -64,6 +61,10 @@ namespace ScalableItemizerTest
             itemizer.Add(2, ItemizerOptions.InheritItems, (i) =>
             {
                 Interlocked.Increment(ref item3);
+                if (item3 == 56)
+                {
+                    handle.Set();
+                }
             });
 
             itemizer.Start();
@@ -71,11 +72,11 @@ namespace ScalableItemizerTest
 
             handle.Wait();
 
-            itemizer.Dispose();
+            itemizer.Dispose();           
 
-            Assert.AreEqual(item1, 14);
-            Assert.AreEqual(item2, 29);
-            Assert.AreEqual(item3, 56);
+            Assert.AreEqual(Math.Round(item2 / (double)item1), 2);
+            Assert.AreEqual(Math.Round(item3 / (double)item2), 2);
+            Assert.AreEqual(Math.Round(item3 / (double)item1), 4);
         }
 
         [TestMethod]
@@ -89,11 +90,15 @@ namespace ScalableItemizerTest
             itemizer.Add(1, (i) =>
             {
                 Interlocked.Increment(ref item1);
+                if (item1 == 10)
+                {
+                    handle.Set();
+                }
             });
 
             itemizer.Start();
 
-            handle.Wait(1100); // +100ms first tick of Elapsed
+            handle.Wait();
 
             itemizer.Dispose();
 
@@ -110,7 +115,7 @@ namespace ScalableItemizerTest
             int item2 = 0;
             int item3 = 0;
 
-            itemizer.Add(0.5, (i) =>
+            itemizer.Add(1, (i) =>
             {
                 Interlocked.Increment(ref item1);
             });
@@ -118,20 +123,24 @@ namespace ScalableItemizerTest
             {
                 Interlocked.Increment(ref item2);
             });
-            itemizer.Add(2, (i) =>
+            itemizer.Add(1, (i) =>
             {
                 Interlocked.Increment(ref item3);
+                if (item3 == 20)
+                {
+                    handle.Set();
+                }
             });
 
             itemizer.Start();
 
-            handle.Wait(2000);
+            handle.Wait();
 
             itemizer.Dispose();
 
-            Assert.AreEqual(item1, 2);
-            Assert.AreEqual(item2, 5);
-            Assert.AreEqual(item3, 10);
+            Assert.AreEqual(Math.Round(item2 / (double)item1), 1);
+            Assert.AreEqual(Math.Round(item3 / (double)item2), 1);
+            Assert.AreEqual(Math.Round(item3 / (double)item1), 1);
         }
     }
 }
